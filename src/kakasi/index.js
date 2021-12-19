@@ -3,124 +3,151 @@
 * @author Loreto Parisi (loreto at gmail dot com)
 * @2017 Loreto Parisi
 */
-(function () {
+const fs = require("fs");
+const resolve = require("path").resolve;
+const spawn = require("child_process").spawn;
 
-    var fs = require('fs'),
-        resolve = require('path').resolve,
-        spawn = require('child_process').spawn;
 
-    /*
-    * Recursively merge properties of two objects 
+/*
+    * Recursively merge properties of two objects
     * @todo: moved to Util
     */
-    function mergeRecursive(obj1, obj2) {
-        for (var p in obj2) {
-            try {
-            // Property in destination object set; update its value.
-            if ( obj2[p].constructor==Object ) {
-                obj1[p] = this.mergeRecursive(obj1[p], obj2[p]);
+function mergeRecursive (obj1, obj2)
+{
 
-            } else {
-                obj1[p] = obj2[p];
+   // eslint-disable-next-line guard-for-in
+   for (const p in obj2)
+   {
 
-            }
+      try
+      {
 
-            } catch(e) {
-            // Property in destination object not set; create it and set its value.
+         // Property in destination object set; update its value.
+         if (obj2[p].constructor == Object)
+         {
+
+            obj1[p] = mergeRecursive(obj1[p], obj2[p]);
+
+         }
+         else
+         {
+
             obj1[p] = obj2[p];
 
-            }
-        }
-        return obj1;
-    }//mergeRecursive
+         }
 
-    var Kakasi;
-    Kakasi = (function () {
+      }
+      catch (e)
+      {
 
-        /**
+         // Property in destination object not set; create it and set its value.
+         obj1[p] = obj2[p];
+
+      }
+
+   }
+   return obj1;
+   // mergeRecursive
+
+}
+
+class Kakasi
+{
+
+   /**
          * KAKASI - Kanji Kana Simple Inverter
          * @see https://github.com/loretoparisi/kakasi
          */
-        function Kakasi(options) {
-            var self = this;
+   constructor (options)
+   {
 
-            this.GetBinFolder = function (filename) {
-                var cdir = process.cwd();
-                var pathComponents = __dirname.split('/');
-                var root = pathComponents.slice(0, pathComponents.length).join('/');
-                process.chdir(root);
-                var binpath = resolve('./bin/' + process.platform + '/' + filename);
+      this.GetBinFolder = function GetBinFolder (filename)
+      {
 
-                process.env.ITAIJIDICTPATH = resolve('./data/itaijidict');
-                process.env.KANWADICTPATH = resolve('./data/kanwadict');
+         const cdir = process.cwd();
+         const pathComponents = __dirname.split("/");
+         const root = pathComponents.slice(0, pathComponents.length).join("/");
+         process.chdir(root);
+         const binpath = resolve(`./bin/${process.platform}/${filename}`);
 
-                process.chdir(cdir);
+         process.env.ITAIJIDICTPATH = resolve("./data/itaijidict");
+         process.env.KANWADICTPATH = resolve("./data/kanwadict");
 
-                if (fs.existsSync(binpath)) { // check local binary path
-                    return binpath;
-                }
-                return null;
-            };
-            this._options = {
-                debug: false,
-                bin: this.GetBinFolder('kakasi'),
-                child: {
-                    detached: false
-                },
-                cmd: {
-                }
-            };
-            mergeRecursive(this._options, options);
-        }//Kakasi
+         process.chdir(cdir);
 
-        /**
+         // check local binary path
+         if (fs.existsSync(binpath))
+         {
+
+            return binpath;
+
+         }
+         return null;
+
+      };
+      this._options = {
+         "bin": this.GetBinFolder("kakasi"),
+         "child": {
+            "detached": false
+         },
+         "cmd": {},
+         "debug": false
+      };
+      mergeRecursive(this._options, options);
+      // Kakasi
+
+   }
+
+   /**
          * Transliterate Japanese
          */
-        Kakasi.prototype.transliterate = function (data) {
-            var self = this;
-            return new Promise(function (resolve, reject) {
-                
-                var args;
-                args = [
-                    '-i',
-                    'euc',
-                    '-Ha',
-                    '-Ka',
-                    '-Ja',
-                    '-Ea',
-                    '-ka',
-                    '-s',
-                    '-iutf8',
-                    '-outf8'
-                ];
-                var kakasi = spawn(self._options.bin, args, {});
-                args = [
-                    data
-                ];
-                var echo = spawn('echo', args, {});
+   transliterate (data)
+   {
 
-                echo.stdout.pipe( kakasi.stdin );
-                var res='';
-                kakasi.stdout.on('data', function(_data) {
-                    var data=new Buffer(_data,'utf-8').toString();
-                    res+=data;
-                });
-                kakasi.stdout.on('end', function(_) {
-                    return resolve(res);
-                });
-                kakasi.on('error', function(error) {
-                    return reject(error);
-                });
+      return new Promise((resolve, reject) =>
+      {
 
-                if (self._options.debug) kakasi.stdout.pipe(process.stdout);
+         let args = [
+            "-i",
+            "euc",
+            "-Ha",
+            "-Ka",
+            "-Ja",
+            "-Ea",
+            "-ka",
+            "-s",
+            "-iutf8",
+            "-outf8"
+         ];
+         const kakasi = spawn(this._options.bin, args, {});
+         args = [
+            data
+         ];
+         const echo = spawn("echo", args, {});
 
-            });
-        }//transliterate
+         echo.stdout.pipe(kakasi.stdin);
+         let res = "";
+         kakasi.stdout.on("data", (_data) =>
+         {
 
-        return Kakasi;
+            const data = Buffer.from(_data, "utf-8").toString();
+            res += data;
 
-    })();
+         });
+         kakasi.stdout.on("end", () => resolve(res));
+         kakasi.on("error", (error) => reject(error));
 
-    module.exports = Kakasi;
+         if (this._options.debug)
+         {
 
-}).call(this);
+            kakasi.stdout.pipe(process.stdout);
+
+         }
+
+      });
+
+   }
+
+}
+
+module.exports = Kakasi;

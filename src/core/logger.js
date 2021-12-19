@@ -34,6 +34,7 @@ function devConsole (data)
 function hookSend (data)
 {
 
+/*
    const hook = new discord.WebhookClient(
       process.env.DISCORD_DEBUG_WEBHOOK_ID,
       process.env.DISCORD_DEBUG_WEBHOOK_TOKEN
@@ -52,6 +53,7 @@ function hookSend (data)
       console.error(`hook.send error:\n${err}`);
 
    });
+*/
 
 }
 
