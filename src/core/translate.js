@@ -10,6 +10,12 @@ const botSend = require("./send");
 const fn = require("./helpers");
 const auth = require("../core/auth");
 
+
+const Kakasi = require('../kakasi/index');
+
+let kk = new Kakasi({
+   debug: false
+});
 // ------------------------------------------
 // Fix broken Discord tags after translation
 // (Emojis, Mentions, Channels, Urls)
@@ -363,6 +369,26 @@ function updateServerStats (message)
 
 }
 
+
+function outputJPTransliteration (text)
+{
+   // "退屈であくびばっかしていた毎日"
+   // let output = "";
+   let prom = kk.transliterate( text ).then((results) => {
+          // console.log("----------\n%s\n----------", results);
+          return results;
+          // output = results;
+       }).catch((error) => {
+          console.error(error);
+          return "";
+       });
+
+   // Promise.all([prom]);
+
+   // return output;
+   return prom;
+}
+
 // ----------------
 // Run translation
 // ----------------
@@ -613,6 +639,11 @@ module.exports = function run (data) // eslint-disable-line complexity
 
          // Detected language from text
          const detectedLang = res.from.language.iso;
+
+         if (langTo == "ja") {
+            res.text += `\n\n ${await outputJPTransliteration(res.text)}`;
+         }
+
          // Language you set when setting up !t channel command
          const channelFrom = from;
 
@@ -635,6 +666,7 @@ module.exports = function run (data) // eslint-disable-line complexity
 
             // eslint-disable-next-line require-atomic-updates
             res.text = await reTranslate(matches, opts);
+
 
 
          }
@@ -662,7 +694,7 @@ module.exports = function run (data) // eslint-disable-line complexity
 
          {
 
-            if (data.message.server[0].langdetect === true)
+            if (data.message.server[0].langdetect === true || data.message.server[0].langdetect === 1)
             {
 
                data.footer.text += `\nSource Language: ${detectedLang}`;
