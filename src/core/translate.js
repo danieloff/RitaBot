@@ -4,18 +4,58 @@
 
 // Codebeat:disable[LOC,ABC,BLOCK_NESTING,ARITY]
 /* eslint-disable consistent-return */
+/* jshint esversion: 11*/
+
 const translate = require("rita-google-translate-api");
 const db = require("./db");
 const botSend = require("./send");
 const fn = require("./helpers");
 const auth = require("../core/auth");
+const translateja = require("./translateja.js");
+
+// const translateja = require("./translateja.mjs");
+// dummy impl
+/* let translateja = 0;
+// import("./translate.mjs").then((loaded) => { translateja = loaded; }).catch((err) => console.log("load error for the translateja"));
+const loadAPI = async () => {
+   if (translateja) return translateja;
+   translateja = await import("./translateja.js");
+   return translateja;
+} */
+
+// const Kuroshiro = require("kuroshiro");
+// const KuromojiAnalyzer = require("kuroshiro-analyzer-kuromoji");
+// const kuroshiro = new Kuroshiro();
+
+// kuroshiro.init(new KuromojiAnalyzer())
+//    .then(function(){
+//        return kuroshiro.convert("感じ取れたら手を繋ごう、重なるのは人生のライン and レミリア最高！", { to: "hiragana" });
+//    })
+//    .then(function(result){
+//        console.log(result);
+//    })
+
+// var Kuroshiro1 = require("kuroshiro").Kuroshiro;
+// Initialize kuroshiro with an instance of analyzer (You could check the [apidoc](#initanalyzer) for more information):
+// For this example, you should npm install and import the kuromoji analyzer first
+// var KuromojiAnalyzer = require("kuroshiro-analyzer-kuromoji").KuromojiAnalyzer;
+// Instantiate
+// const kuroshiro = new Kuroshiro1();
+// Initialize
+// Here uses async/await, you could also use Promise
+// await kuroshiro.init(new KuromojiAnalyzer());
+// var KuromojiService = (async()=> kuroshiro.init(new KuromojiAnalyzer()))();
+// Convert what you want
+// const result = await kuroshiro.convert("感じ取れたら手を繋ごう、重なるのは人生のライン and レミリア最高！", { to: "hiragana" });
+// const Kakasi = require('../kakasi/index');
+
+// let kk = new Kakasi({
+//   debug: false
+// });
 
 
-const Kakasi = require('../kakasi/index');
 
-let kk = new Kakasi({
-   debug: false
-});
+
 // ------------------------------------------
 // Fix broken Discord tags after translation
 // (Emojis, Mentions, Channels, Urls)
@@ -369,26 +409,6 @@ function updateServerStats (message)
 
 }
 
-
-function outputJPTransliteration (text)
-{
-   // "退屈であくびばっかしていた毎日"
-   // let output = "";
-   let prom = kk.transliterate( text ).then((results) => {
-          // console.log("----------\n%s\n----------", results);
-          return results;
-          // output = results;
-       }).catch((error) => {
-          console.error(error);
-          return "";
-       });
-
-   // Promise.all([prom]);
-
-   // return output;
-   return prom;
-}
-
 // ----------------
 // Run translation
 // ----------------
@@ -641,7 +661,7 @@ module.exports = function run (data) // eslint-disable-line complexity
          const detectedLang = res.from.language.iso;
 
          if (langTo == "ja") {
-            res.text += `\n\n ${await outputJPTransliteration(res.text)}`;
+            res.text += `\n\n ${await translateja.outputJPTransliteration(res.text)}`;
          }
 
          // Language you set when setting up !t channel command
